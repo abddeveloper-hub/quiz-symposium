@@ -302,7 +302,7 @@ export default function AdminPage() {
 
           {/* Participant Portal Link */}
           <a
-            href="/"
+            href={networkUrl || PUBLIC_GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-[0.25rem] bg-white hover:bg-[#f6faf9] border border-[#0ba689] text-xs text-[#0ba689] font-semibold transition-all shadow-xs"

@@ -13,6 +13,7 @@ import {
   LogOut,
   ArrowRight,
   GraduationCap,
+  Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useQuiz } from '@/context/QuizStateContext';
@@ -76,6 +77,20 @@ export default function ParticipantPage() {
   const isRevealed = state.status === 'REVEALED';
   const isCorrect = isRevealed && selectedOptionId === currentQuestion?.correctOptionId;
   const isWrong = isRevealed && isAnswered && selectedOptionId !== currentQuestion?.correctOptionId;
+
+  // Strict Question Concealment: Conceal question before conductor allows/unlocks
+  const isRoundConcealed =
+    state.status === 'WAITING' ||
+    (state.status === 'LOCKED' && !state.questionLaunchedAt) ||
+    state.questions.length === 0;
+
+  // The round is active or revealed only when conductor explicitly launched it
+  const isRoundActive =
+    !isRoundConcealed &&
+    (state.status === 'LIVE' ||
+      (state.status === 'LOCKED' && state.questionLaunchedAt !== null) ||
+      state.status === 'REVEALED') &&
+    state.questions.length > 0;
 
   // Trigger celebration confetti when participant answers correctly
   useEffect(() => {
@@ -393,42 +408,54 @@ export default function ParticipantPage() {
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-12 max-w-4xl mx-auto w-full">
         <AnimatePresence mode="wait">
           {/* ========================================================= */}
-          {/* STAGE 1: WAITING / INACTIVE                               */}
+          {/* STAGE 1: ROUND STANDBY • QUESTION STRICTLY CONCEALED      */}
           {/* ========================================================= */}
-          {state.status === 'WAITING' && (
+          {isRoundConcealed && (
             <motion.div
-              key="stage-waiting"
+              key="stage-concealed"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -14 }}
               className="flex flex-col items-center text-center max-w-xl w-full space-y-6"
             >
-              {/* Status Indicator */}
+              {/* Institutional Status Badge */}
               <div className="academic-status-indicator">
                 <span className="status-dot animate-ping" />
                 <span className="font-label-md text-[#006b57] tracking-[0.08em]">
-                  SESSION IN PROGRESS • STANDBY
+                  ROUND STANDBY • QUESTION CONCEALED
                 </span>
               </div>
 
-              {/* Waiting Hero Card */}
+              {/* Concealed Hero Folio Card */}
               <div className="w-full p-8 md:p-12 rounded-lg bg-white border border-[#dbe6e3] ambient-emerald-shadow flex flex-col items-center space-y-6">
-                <div className="w-16 h-16 rounded-[0.25rem] bg-[#edf4f2] border border-[#dbe6e3] flex items-center justify-center text-[#006b57]">
-                  <Radio className="w-8 h-8 animate-pulse text-[#0ba689]" />
+                <div className="w-16 h-16 rounded-[0.25rem] bg-[#edf4f2] border border-[#dbe6e3] flex items-center justify-center text-[#006b57] relative shadow-xs">
+                  <Lock className="w-8 h-8 text-[#0ba689]" />
                 </div>
 
                 <div className="space-y-3">
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <span className="academic-chip px-2.5 py-1">
+                      Question #{state.currentQuestionIndex + 1} of {Math.max(1, state.questions.length)}
+                    </span>
+                    <span className="font-label-sm text-[#49625d]">
+                      {currentQuestion?.category || 'General Science'}
+                    </span>
+                    <span className="font-serif text-[#006b57] font-bold text-xs">
+                      +{currentQuestion?.points || 10} PTS
+                    </span>
+                  </div>
+
                   <h2 className="font-headline-lg text-[#1e332f] tracking-tight">
                     {state.questions.length === 0
                       ? 'Awaiting Examination Questions'
-                      : 'Awaiting Question Conductor'}
+                      : 'Question Concealed by Conductor'}
                   </h2>
 
                   {/* Scholarly Citation Callout */}
-                  <div className="scholarly-abstract-callout text-left text-xs md:text-sm">
+                  <div className="scholarly-abstract-callout text-left text-xs md:text-sm leading-relaxed">
                     {state.questions.length === 0
                       ? 'The academic chair is currently organizing the official questions in the moderator deck. Your touchscreen terminal is calibrated and will activate immediately.'
-                      : `The moderator is organizing Question #${state.currentQuestionIndex + 1}. Examination response options will unlock live on this surface as the countdown timer commences.`}
+                      : `Institutional examination protocol active. The official examination prompt and answer options are concealed on all participant terminals. The moment the academic moderator unlocks the round, the question prompt and rapid buzzer options will display instantly.`}
                   </div>
                 </div>
 
@@ -445,8 +472,9 @@ export default function ParticipantPage() {
                 </div>
               </div>
 
-              <span className="font-label-sm text-[#6d7a75] tracking-[0.05em]">
-                Classical Academic Editorial • Zero-Latency Pointer Touch
+              <span className="font-label-sm text-[#49625d] tracking-[0.05em] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#0ba689] animate-pulse" />
+                TOUCH TERMINAL ARMED • ZERO-LATENCY STANDBY
               </span>
             </motion.div>
           )}
@@ -454,7 +482,7 @@ export default function ParticipantPage() {
           {/* ========================================================= */}
           {/* STAGES 2, 3 & 4: QUESTION LIVE, ANSWERED, OR REVEALED     */}
           {/* ========================================================= */}
-          {(state.status === 'LIVE' || state.status === 'LOCKED' || state.status === 'REVEALED') && (
+          {isRoundActive && (
             <motion.div
               key="stage-interactive"
               initial={{ opacity: 0, scale: 0.98 }}

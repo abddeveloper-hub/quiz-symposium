@@ -327,17 +327,37 @@ export default function AdminPage() {
 
                     <div className="flex items-center gap-2">
                       <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-[0.25rem] ${
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-[0.25rem] flex items-center gap-1.5 ${
                           state.status === 'LIVE'
                             ? 'bg-[#e2f8f2] text-[#006b57] border border-[#79f5db] animate-pulse'
                             : state.status === 'REVEALED'
                             ? 'bg-[#006b57] text-white'
-                            : state.status === 'LOCKED'
+                            : state.status === 'LOCKED' && state.questionLaunchedAt
                             ? 'bg-[#ffdad6] text-[#93000a] border border-[#ba1a1a]/40'
-                            : 'bg-[#edf4f2] text-[#49625d] border border-[#dbe6e3]'
+                            : 'bg-[#edf4f2] text-[#006b57] border border-[#dbe6e3]'
                         }`}
                       >
-                        {state.status}
+                        {state.status === 'LIVE' ? (
+                          <>
+                            <Radio className="w-3.5 h-3.5 text-[#0ba689]" />
+                            <span>PHONES LIVE</span>
+                          </>
+                        ) : state.status === 'REVEALED' ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                            <span>PHONES REVEALED</span>
+                          </>
+                        ) : state.status === 'LOCKED' && state.questionLaunchedAt ? (
+                          <>
+                            <Lock className="w-3.5 h-3.5 text-[#ba1a1a]" />
+                            <span>PHONES LOCKED</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-3.5 h-3.5 text-[#0ba689]" />
+                            <span>PHONES CONCEALED</span>
+                          </>
+                        )}
                       </span>
 
                       {/* DIRECT EDIT BUTTON */}
@@ -522,9 +542,22 @@ export default function AdminPage() {
                     ? 'NO QUESTIONS LOADED - CREATE IN MANAGER'
                     : state.status === 'LIVE'
                     ? `ROUND LIVE • ${state.remainingSeconds}s`
-                    : 'UNLOCK BUZZER / ENABLE OPTIONS'}
+                    : 'UNLOCK QUESTION & BUZZER (BROADCAST TO PHONES)'}
                 </span>
               </motion.button>
+
+              <div className="text-[11px] text-[#49625d] text-center -mt-2">
+                {state.status === 'LIVE' ? (
+                  <span className="text-[#006b57] font-semibold flex items-center justify-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0ba689] animate-ping" />
+                    Question displayed & buzzer options live on all contestant phones
+                  </span>
+                ) : (
+                  <span>
+                    Question prompt & options remain strictly concealed on phones until you click Unlock.
+                  </span>
+                )}
+              </div>
 
               {/* SECONDARY CONDUCTOR TRIGGERS */}
               <div className="grid grid-cols-2 gap-3">

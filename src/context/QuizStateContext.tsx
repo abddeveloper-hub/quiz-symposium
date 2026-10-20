@@ -77,6 +77,22 @@ function deduplicateQuestions(questions: Question[]): Question[] {
 type Listener = (action: QuizAction) => void;
 const memoryListeners: Set<Listener> = new Set();
 
+const ADMIN_ACTIONS = new Set<string>([
+  'BROADCAST_QUESTION',
+  'UNLOCK_ROUND',
+  'LOCK_ROUND',
+  'REVEAL_ANSWER',
+  'PASS_REOPEN_ROUND',
+  'NEXT_QUESTION',
+  'RESET_ROUND',
+  'ADD_QUESTION',
+  'UPDATE_QUESTION',
+  'DELETE_QUESTION',
+  'RESET_ALL_SCORES',
+  'CLEAR_ALL_PARTICIPANTS',
+  'SET_STATUS',
+]);
+
 export function QuizProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<QuizState>(() => {
     if (typeof window !== 'undefined') {
@@ -107,11 +123,13 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     sounds.enabled = state.soundEnabled;
   }, [state.soundEnabled]);
 
-  const saveToStorage = useCallback((newState: QuizState) => {
+  const saveToStorage = useCallback((newState: QuizState, shouldPushCloud = false) => {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-        pushQuizStateToFirebase(newState);
+        if (shouldPushCloud) {
+          pushQuizStateToFirebase(newState);
+        }
       } catch {
         // storage quota
       }
@@ -133,7 +151,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     }
 
-    // Broadcast to server for cross-device/mobile network sync
+    // Broadcast to server for cross-device/mobile network sync (if running with Next API routes)
     if (typeof window !== 'undefined') {
       fetch('/api/quiz/action', {
         method: 'POST',
@@ -369,7 +387,11 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
           break;
       }
 
-      saveToStorage(next);
+      const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.includes('admin');
+      const isConductorAction = ADMIN_ACTIONS.has(action.type);
+      const shouldPushCloud = isConductorAction && isAdminRoute;
+
+      saveToStorage(next, shouldPushCloud);
       return next;
     });
   }, [saveToStorage]);
@@ -412,20 +434,27 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
       console.warn('SSE subscription error:', e);
     }
 
-    // Connect to Firebase Cloud Firestore for remote/cloud synchronization
+    // Connect to Firebase Cloud Realtime Database / Firestore for remote/cloud synchronization
     let unsubscribeFirebase: (() => void) | null = null;
     try {
       unsubscribeFirebase = subscribeToFirebaseQuizState((cloudState) => {
         if (cloudState && cloudState.status) {
-          setState((prev) => ({
-            ...prev,
-            ...cloudState,
-            questions: cloudState.questions?.length
-              ? deduplicateQuestions(cloudState.questions)
-              : prev.questions,
-            responses: cloudState.responses || prev.responses,
-            participants: cloudState.participants || prev.participants,
-          }));
+          setState((prev) => {
+            const updated: QuizState = {
+              ...prev,
+              ...cloudState,
+              questions:
+                cloudState.questions && cloudState.questions.length > 0
+                  ? deduplicateQuestions(cloudState.questions)
+                  : prev.questions,
+              responses: cloudState.responses || prev.responses,
+              participants: cloudState.participants || prev.participants,
+            };
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
         }
       });
     } catch (e) {
@@ -444,14 +473,6 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
                 ...prev,
                 ...serverState,
               };
-            }
-            // If local storage has questions but server is empty, push to server
-            if (prev.questions.length > 0 && (!serverState.questions || serverState.questions.length === 0)) {
-              fetch('/api/quiz/state', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(prev),
-              }).catch(() => {});
             }
             return prev;
           });
@@ -486,7 +507,8 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
               status: 'LOCKED',
               remainingSeconds: 0,
             };
-            saveToStorage(lockedState);
+            const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.includes('admin');
+            saveToStorage(lockedState, isAdminRoute);
             return lockedState;
           }
           if (prev.remainingSeconds <= 4) {

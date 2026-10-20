@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen,
@@ -28,7 +28,6 @@ export default function ParticipantPage() {
   // Current signed-in participant state
   const [currentUser, setCurrentUser] = useState<Participant | null>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const hasLoadedRef = useRef<boolean>(false);
 
   // Sign-in form state
   const [inputName, setInputName] = useState<string>('');
@@ -38,29 +37,26 @@ export default function ParticipantPage() {
 
   // Load saved user profile from localStorage on mount
   useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-
-    try {
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem(USER_STORAGE_KEY);
-        if (saved) {
-          const parsed: Participant = JSON.parse(saved);
-          if (parsed && parsed.name) {
-            queueMicrotask(() => {
+    const timer = setTimeout(() => {
+      try {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem(USER_STORAGE_KEY);
+          if (saved) {
+            const parsed: Participant = JSON.parse(saved);
+            if (parsed && parsed.name) {
               setCurrentUser(parsed);
               registerParticipant(parsed);
-            });
+            }
           }
         }
-      }
-    } catch (e) {
-      console.warn('Failed to load user profile from storage:', e);
-    } finally {
-      queueMicrotask(() => {
+      } catch (e) {
+        console.warn('Failed to load user profile from storage:', e);
+      } finally {
         setIsLoaded(true);
-      });
-    }
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [registerParticipant]);
 
   // Keep score updated from state.participants

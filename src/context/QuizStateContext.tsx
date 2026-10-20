@@ -16,6 +16,8 @@ import {
   subscribeToFirebaseQuizState,
   submitResponseToFirebase,
   registerParticipantInFirebase,
+  clearAllParticipantsInFirebase,
+  clearResponsesInFirebase,
 } from '@/lib/firebase';
 
 const STORAGE_KEY = 'symposium_quiz_state_v3';
@@ -438,7 +440,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     let unsubscribeFirebase: (() => void) | null = null;
     try {
       unsubscribeFirebase = subscribeToFirebaseQuizState((cloudState) => {
-        if (cloudState && cloudState.status) {
+        if (cloudState && typeof cloudState === 'object') {
           setState((prev) => {
             const updated: QuizState = {
               ...prev,
@@ -447,8 +449,8 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
                 cloudState.questions && cloudState.questions.length > 0
                   ? deduplicateQuestions(cloudState.questions)
                   : prev.questions,
-              responses: cloudState.responses || prev.responses,
-              participants: cloudState.participants || prev.participants,
+              responses: cloudState.responses !== undefined ? cloudState.responses : prev.responses,
+              participants: cloudState.participants !== undefined ? cloudState.participants : prev.participants,
             };
             try {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -533,6 +535,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
   // Public dispatchers
   const broadcastQuestion = useCallback((questionIndex: number) => {
     dispatchAction({ type: 'BROADCAST_QUESTION', payload: { questionIndex } });
+    clearResponsesInFirebase();
   }, [dispatchAction]);
 
   const unlockRound = useCallback(() => {
@@ -558,10 +561,12 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
 
   const nextQuestion = useCallback(() => {
     dispatchAction({ type: 'NEXT_QUESTION' });
+    clearResponsesInFirebase();
   }, [dispatchAction]);
 
   const resetRound = useCallback(() => {
     dispatchAction({ type: 'RESET_ROUND' });
+    clearResponsesInFirebase();
   }, [dispatchAction]);
 
   const submitResponse = useCallback(
@@ -620,6 +625,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
 
   const clearAllParticipants = useCallback(() => {
     dispatchAction({ type: 'CLEAR_ALL_PARTICIPANTS' });
+    clearAllParticipantsInFirebase();
   }, [dispatchAction]);
 
   const setStatus = useCallback((status: QuizStatus) => {

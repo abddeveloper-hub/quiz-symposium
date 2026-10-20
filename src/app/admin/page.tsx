@@ -293,6 +293,13 @@ export default function AdminPage() {
             <span>Connect Phones (QR)</span>
           </button>
 
+          {/* Live Candidates Badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[0.25rem] bg-white border border-[#dbe6e3] text-xs font-semibold text-[#1e332f] shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#0ba689] animate-pulse" />
+            <Users className="w-3.5 h-3.5 text-[#0ba689]" />
+            <span>{state.participants.length} Candidates</span>
+          </div>
+
           {/* Participant Portal Link */}
           <a
             href="/"
@@ -716,7 +723,7 @@ export default function AdminPage() {
             <div className="p-4 rounded-lg bg-white border border-[#dbe6e3] ambient-emerald-shadow space-y-3">
               <span className="text-xs uppercase tracking-wider text-[#1e332f] font-bold flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#0ba689]" />
-                Participant Standings
+                Participant Standings ({state.participants.length})
               </span>
 
               <div className="space-y-2">

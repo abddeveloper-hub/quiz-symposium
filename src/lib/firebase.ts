@@ -85,10 +85,16 @@ function normalizeResponses(raw: unknown): ParticipantResponse[] {
   return [];
 }
 
+export interface PushOptions {
+  resetRound?: boolean;
+  clearParticipants?: boolean;
+}
+
 /**
  * Broadcast authoritative quiz state from laptop Conductor to Firebase Cloud
+ * Uses non-destructive update to preserve registered participants and incoming responses
  */
-export async function pushQuizStateToFirebase(state: QuizState) {
+export async function pushQuizStateToFirebase(state: QuizState, options?: PushOptions) {
   if (!ENABLE_FIREBASE_CLOUD) return;
 
   const cleanState = sanitizePayload({
@@ -101,26 +107,35 @@ export async function pushQuizStateToFirebase(state: QuizState) {
   if (rtdb) {
     try {
       const liveRef = ref(rtdb, RTDB_ROOT);
-      // Format responses and participants as objects keyed by ID to prevent concurrency clobbering
-      const responsesMap: Record<string, ParticipantResponse> = {};
-      (cleanState.responses || []).forEach((r: ParticipantResponse) => {
-        if (r && r.participantId) {
-          responsesMap[r.participantId] = r;
-        }
-      });
+      
+      const updates: Record<string, unknown> = {
+        status: cleanState.status,
+        currentQuestionIndex: cleanState.currentQuestionIndex,
+        questionLaunchedAt: cleanState.questionLaunchedAt,
+        remainingSeconds: cleanState.remainingSeconds,
+        questions: cleanState.questions,
+        soundEnabled: cleanState.soundEnabled,
+        lastUpdated: Date.now(),
+      };
 
-      const participantsMap: Record<string, Participant> = {};
-      (cleanState.participants || []).forEach((p: Participant) => {
-        if (p && p.id) {
-          participantsMap[p.id] = p;
-        }
-      });
+      if (options?.resetRound) {
+        updates['responses'] = null;
+      }
 
-      await set(liveRef, {
-        ...cleanState,
-        responses: responsesMap,
-        participants: participantsMap,
-      });
+      if (options?.clearParticipants) {
+        updates['participants'] = null;
+      }
+
+      // If conductor revealed answer, synchronize updated scores into participants in RTDB
+      if (cleanState.status === 'REVEALED' && Array.isArray(cleanState.participants)) {
+        cleanState.participants.forEach((p: Participant) => {
+          if (p && p.id) {
+            updates[`participants/${p.id}/score`] = p.score;
+          }
+        });
+      }
+
+      await update(liveRef, updates);
       return;
     } catch (err) {
       console.warn('RTDB push notice:', err);
@@ -135,6 +150,36 @@ export async function pushQuizStateToFirebase(state: QuizState) {
       await setDoc(docRef, cleanState);
     } catch (err) {
       console.warn('Firestore fallback sync notice:', err);
+    }
+  }
+}
+
+/**
+ * Explicitly clear all participants from Firebase Realtime Database
+ */
+export async function clearAllParticipantsInFirebase() {
+  if (!ENABLE_FIREBASE_CLOUD) return;
+  const rtdb = getRtdb();
+  if (rtdb) {
+    try {
+      await set(ref(rtdb, `${RTDB_ROOT}/participants`), null);
+    } catch (err) {
+      console.warn('RTDB clear participants notice:', err);
+    }
+  }
+}
+
+/**
+ * Explicitly clear response board for new round from Firebase Realtime Database
+ */
+export async function clearResponsesInFirebase() {
+  if (!ENABLE_FIREBASE_CLOUD) return;
+  const rtdb = getRtdb();
+  if (rtdb) {
+    try {
+      await set(ref(rtdb, `${RTDB_ROOT}/responses`), null);
+    } catch (err) {
+      console.warn('RTDB clear responses notice:', err);
     }
   }
 }

@@ -458,7 +458,6 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
             ...prev,
             remainingSeconds: prev.remainingSeconds - 1,
           };
-          saveToStorage(next);
           return next;
         });
       }, 1000);

@@ -27,10 +27,30 @@ export const db = getFirestore(app);
 
 const QUIZ_DOC_PATH = ['symposium_quiz', 'live_session'] as const;
 
+// Circuit breaker to protect browser console from infinite backoff retries when Spark tier daily limit is reached
+let isFirebaseQuotaExhausted = false;
+
+function handleFirestoreError(context: string, err: unknown): boolean {
+  const code = (err as { code?: string })?.code;
+  const message = (err as { message?: string })?.message || '';
+  if (code === 'resource-exhausted' || message.includes('Quota exceeded') || message.includes('resource-exhausted')) {
+    if (!isFirebaseQuotaExhausted) {
+      isFirebaseQuotaExhausted = true;
+      console.info(
+        'ℹ️ Firebase Cloud Firestore daily quota reached. Seamlessly continuing with high-speed local network & BroadcastChannel sync.'
+      );
+    }
+    return true;
+  }
+  console.warn(`Firebase ${context} notice:`, err);
+  return false;
+}
+
 /**
  * Broadcast full quiz state to Firebase Cloud Firestore
  */
 export async function pushQuizStateToFirebase(state: QuizState) {
+  if (isFirebaseQuotaExhausted) return;
   try {
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     await setDoc(docRef, {
@@ -38,7 +58,7 @@ export async function pushQuizStateToFirebase(state: QuizState) {
       lastUpdated: Date.now(),
     });
   } catch (err) {
-    console.warn('Firebase state sync error:', err);
+    handleFirestoreError('state sync', err);
   }
 }
 
@@ -48,6 +68,7 @@ export async function pushQuizStateToFirebase(state: QuizState) {
 export function subscribeToFirebaseQuizState(
   onUpdate: (state: Partial<QuizState>) => void
 ): () => void {
+  if (isFirebaseQuotaExhausted) return () => {};
   try {
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     const unsubscribe = onSnapshot(
@@ -61,12 +82,17 @@ export function subscribeToFirebaseQuizState(
         }
       },
       (error) => {
-        console.warn('Firebase onSnapshot error:', error);
+        const isQuota = handleFirestoreError('onSnapshot', error);
+        if (isQuota) {
+          try {
+            unsubscribe();
+          } catch {}
+        }
       }
     );
     return unsubscribe;
   } catch (err) {
-    console.warn('Failed to subscribe to Firebase:', err);
+    handleFirestoreError('subscribe', err);
     return () => {};
   }
 }
@@ -75,6 +101,7 @@ export function subscribeToFirebaseQuizState(
  * Submit participant response directly to Firebase
  */
 export async function submitResponseToFirebase(response: ParticipantResponse) {
+  if (isFirebaseQuotaExhausted) return;
   try {
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     const snap = await getDoc(docRef);
@@ -92,7 +119,7 @@ export async function submitResponseToFirebase(response: ParticipantResponse) {
       }
     }
   } catch (err) {
-    console.warn('Failed to submit response to Firebase:', err);
+    handleFirestoreError('response submit', err);
   }
 }
 
@@ -100,6 +127,7 @@ export async function submitResponseToFirebase(response: ParticipantResponse) {
  * Register participant in Firebase live session
  */
 export async function registerParticipantInFirebase(participant: Participant) {
+  if (isFirebaseQuotaExhausted) return;
   try {
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     const snap = await getDoc(docRef);
@@ -120,6 +148,6 @@ export async function registerParticipantInFirebase(participant: Participant) {
       });
     }
   } catch (err) {
-    console.warn('Failed to register participant in Firebase:', err);
+    handleFirestoreError('register participant', err);
   }
 }

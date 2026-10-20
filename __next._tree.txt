@@ -1,0 +1,5 @@
+:HL["/quiz-symposium/next_assets/static/chunks/0idp39btpmqzh.css","style"]
+:HL["/quiz-symposium/next_assets/static/media/a343f882a40d2cc9-s.p.1sj6eobyi31rd.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/quiz-symposium/next_assets/static/media/b4e85636e2ca4056-s.p.11bvk_b9f2jcg.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+1:[["children",{"s":"__PAGE__","h":160}]]
+0:{"b":"YdqpDlWyqTXGU9sHbKWxs","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

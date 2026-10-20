@@ -71,25 +71,20 @@ export default function AdminPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // QR Modal State
+  const PUBLIC_GITHUB_URL = 'https://abddeveloper-hub.github.io/quiz-symposium/';
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
-  const [networkUrl, setNetworkUrl] = useState<string>('http://10.254.84.8:3000');
+  const [networkUrl, setNetworkUrl] = useState<string>(PUBLIC_GITHUB_URL);
+  const [isPublicMode, setIsPublicMode] = useState<boolean>(true);
   const [detectedIp, setDetectedIp] = useState<string>('10.254.84.8');
   const [customIp, setCustomIp] = useState<string>('10.254.84.8');
 
-  // Detect LAN / Wi-Fi IP address from server
+  // Initialize network URL
   React.useEffect(() => {
-    fetch('/api/network-ip')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.ip) {
-          setDetectedIp(data.ip);
-          setCustomIp(data.ip);
-          const port = data.port || 3000;
-          setNetworkUrl(`http://${data.ip}:${port}`);
-        }
-      })
-      .catch(() => {});
+    if (typeof window !== 'undefined' && window.location.hostname.includes('github.io')) {
+      setNetworkUrl(PUBLIC_GITHUB_URL);
+      setIsPublicMode(true);
+    }
   }, []);
 
   const showToast = (msg: string) => {
@@ -1191,13 +1186,47 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-4 flex flex-col items-center">
+                {/* Mode Selector Tabs */}
+                <div className="flex w-full p-1 rounded-[0.25rem] bg-[#edf4f2] border border-[#dbe6e3] text-xs font-medium">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPublicMode(true);
+                      setNetworkUrl(PUBLIC_GITHUB_URL);
+                    }}
+                    className={`flex-1 py-1.5 rounded-[0.25rem] transition-all cursor-pointer font-semibold ${
+                      isPublicMode
+                        ? 'bg-[#006b57] text-white shadow-xs'
+                        : 'text-[#49625d] hover:text-[#006b57]'
+                    }`}
+                  >
+                    Public GitHub Link (Global)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPublicMode(false);
+                      setNetworkUrl(`http://${customIp}:3000`);
+                    }}
+                    className={`flex-1 py-1.5 rounded-[0.25rem] transition-all cursor-pointer font-semibold ${
+                      !isPublicMode
+                        ? 'bg-[#006b57] text-white shadow-xs'
+                        : 'text-[#49625d] hover:text-[#006b57]'
+                    }`}
+                  >
+                    Local Wi-Fi IP
+                  </button>
+                </div>
+
                 <div className="p-2.5 rounded-[0.25rem] bg-[#e2f8f2] border border-[#79f5db] text-left w-full text-xs space-y-1">
                   <div className="text-[#006b57] font-bold flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#0ba689] animate-pulse" />
-                    Mobile Wi-Fi Connection
+                    {isPublicMode ? 'Public Internet Connection (Any Phone / Any Network)' : 'Local Wi-Fi Network Connection'}
                   </div>
                   <p className="text-[#003328] text-[11px] leading-relaxed">
-                    Connect contestant phones to the <strong>same Wi-Fi or Mobile Hotspot</strong>, then scan the QR code below:
+                    {isPublicMode
+                      ? 'Anyone anywhere in the world on mobile data (4G/5G) or Wi-Fi can scan this QR code or visit the public link below to join live!'
+                      : 'Connect participant phones to the same Wi-Fi or Mobile Hotspot, then scan the QR code below:'}
                   </p>
                 </div>
 
@@ -1232,37 +1261,38 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  {/* Manual IP Adjustment Option */}
-                  <div className="flex items-center gap-2 text-[11px] text-[#49625d]">
-                    <span className="shrink-0 font-medium">Host IP:</span>
-                    <input
-                      type="text"
-                      value={customIp}
-                      onChange={(e) => {
-                        const val = e.target.value.trim();
-                        setCustomIp(val);
-                        setNetworkUrl(`http://${val}:3000`);
-                      }}
-                      placeholder="e.g. 10.254.84.8"
-                      className="flex-1 px-2 py-1 rounded-[0.25rem] border border-[#dbe6e3] bg-white text-xs font-mono text-[#1e332f] focus:outline-none focus:border-[#0ba689]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCustomIp(detectedIp);
-                        setNetworkUrl(`http://${detectedIp}:3000`);
-                      }}
-                      className="text-[10px] text-[#006b57] underline hover:text-[#0ba689] shrink-0"
-                    >
-                      Reset
-                    </button>
-                  </div>
+                  {!isPublicMode && (
+                    <div className="flex items-center gap-2 text-[11px] text-[#49625d]">
+                      <span className="shrink-0 font-medium">Host IP:</span>
+                      <input
+                        type="text"
+                        value={customIp}
+                        onChange={(e) => {
+                          const val = e.target.value.trim();
+                          setCustomIp(val);
+                          setNetworkUrl(`http://${val}:3000`);
+                        }}
+                        placeholder="e.g. 10.254.84.8"
+                        className="flex-1 px-2 py-1 rounded-[0.25rem] border border-[#dbe6e3] bg-white text-xs font-mono text-[#1e332f] focus:outline-none focus:border-[#0ba689]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomIp(detectedIp);
+                          setNetworkUrl(`http://${detectedIp}:3000`);
+                        }}
+                        className="text-[10px] text-[#006b57] underline hover:text-[#0ba689] shrink-0"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-[11px] text-[#49625d] text-left bg-[#f6faf9] p-3 rounded-[0.25rem] border border-[#dbe6e3] w-full space-y-1">
-                  <div className="text-[#006b57] font-bold">✓ Zero-Latency Mobile Synchronized</div>
-                  <div>• Contestants open <strong>{networkUrl}</strong> on their phone browser.</div>
-                  <div>• Submissions &amp; questions update instantly in real-time across the room.</div>
+                  <div className="text-[#006b57] font-bold">✓ Real-Time Cloud Synchronization Active</div>
+                  <div>• Contestants open <strong>{networkUrl}</strong> on their mobile browser.</div>
+                  <div>• Questions and submissions update instantly via Firebase Cloud across the globe.</div>
                 </div>
               </div>
 

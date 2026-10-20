@@ -19,9 +19,8 @@ export const firebaseConfig = {
   measurementId: 'G-50NV45BYF3',
 };
 
-// By default, Firebase Cloud sync is disabled while the shared Spark tier project daily limit is exceeded.
-// To enable Firebase, set NEXT_PUBLIC_ENABLE_FIREBASE=true in your environment.
-export const ENABLE_FIREBASE_CLOUD = process.env.NEXT_PUBLIC_ENABLE_FIREBASE === 'true';
+// Firebase Cloud Firestore sync enables real-time public synchronization across any mobile device anywhere in the world.
+export const ENABLE_FIREBASE_CLOUD = process.env.NEXT_PUBLIC_ENABLE_FIREBASE !== 'false';
 
 // Lazily get Firestore instance only when enabled
 function getDb() {

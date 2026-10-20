@@ -26,8 +26,8 @@ export function OptionCard({
   isRevealed,
   onSelect,
 }: OptionCardProps) {
-  const handlePointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
+  const handleSelect = (e: React.MouseEvent | React.PointerEvent) => {
+    e.stopPropagation();
     if (!isDisabled) {
       onSelect(id);
     }
@@ -62,9 +62,9 @@ export function OptionCard({
 
   return (
     <motion.div
-      onPointerDown={handlePointerDown}
+      onClick={handleSelect}
       whileTap={!isDisabled ? { scale: 0.98 } : undefined}
-      className={`group relative w-full p-4 md:p-5 rounded-lg border transition-all duration-150 flex items-center justify-between gap-4 cursor-pointer select-none touch-none ${cardStyle}`}
+      className={`group relative w-full p-4 md:p-5 rounded-lg border transition-all duration-150 flex items-center justify-between gap-4 cursor-pointer select-none touch-manipulation active:scale-[0.98] ${cardStyle}`}
     >
       <div className="flex items-center gap-3.5 min-w-0">
         {/* Academic Option Marker Badge (A, B, C, D in Noto Serif) */}

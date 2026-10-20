@@ -1,4 +1,5 @@
-import { quizClients } from '@/lib/quizSync';
+import { quizClients, getServerQuizState } from '@/lib/quizSync';
+
 
 export async function GET(request: Request) {
   let clientWriter: ((data: string) => void) | null = null;
@@ -15,10 +16,19 @@ export async function GET(request: Request) {
 
       quizClients.add(clientWriter);
 
-      // Initial connection ping
-      clientWriter(': connected\n\n');
+      // Immediately send authoritative current server state to newly connected client
+      try {
+        const currentState = getServerQuizState();
+        const initialSyncPayload = `data: ${JSON.stringify({
+          type: 'STATE_SYNC',
+          payload: currentState,
+        })}\n\n`;
+        clientWriter(initialSyncPayload);
+      } catch (e) {
+        console.warn('Failed to send initial SSE state:', e);
+      }
 
-      // Heartbeat every 15s to keep mobile connection alive
+      // Heartbeat every 15s to keep mobile connection alive (prevents mobile sleep)
       const heartbeat = setInterval(() => {
         try {
           controller.enqueue(new TextEncoder().encode(': ping\n\n'));
@@ -41,6 +51,7 @@ export async function GET(request: Request) {
       'Cache-Control': 'no-cache, no-transform',
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no',
     },
   });
 }

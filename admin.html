@@ -98,18 +98,25 @@
     }
   </style>
   <script>
-    window.location.replace("http://localhost:3000/admin");
+    const host = window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+      ? window.location.hostname
+      : '10.254.84.8';
+    window.location.replace("http://" + host + ":3000/admin");
   </script>
 </head>
 <body>
   <div class="card">
     <div class="badge">Luminous Emerald Academic</div>
     <h1>Admin Conductor Room</h1>
-    <p>Opening the live examination conductor console at <strong>http://localhost:3000/admin</strong>...</p>
+    <p>Opening the live examination conductor console at <strong>port 3000</strong>...</p>
     <div class="btn-group">
-      <a href="http://localhost:3000/admin" class="btn">Enter Conductor Room &rarr;</a>
-      <a href="http://localhost:3000/" class="btn btn-secondary">Candidate View &rarr;</a>
+      <a id="admin-btn" href="http://10.254.84.8:3000/admin" class="btn">Enter Conductor Room &rarr;</a>
+      <a id="cand-btn" href="http://10.254.84.8:3000/" class="btn btn-secondary">Candidate View &rarr;</a>
     </div>
+    <script>
+      document.getElementById('admin-btn').href = "http://" + host + ":3000/admin";
+      document.getElementById('cand-btn').href = "http://" + host + ":3000/";
+    </script>
   </div>
 </body>
 </html>

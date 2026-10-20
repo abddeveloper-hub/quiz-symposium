@@ -148,9 +148,20 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
       let next: QuizState = { ...prev };
 
       switch (action.type) {
-        case 'STATE_SYNC':
-          next = { ...action.payload };
+        case 'STATE_SYNC': {
+          const payload = action.payload;
+          next = {
+            ...prev,
+            ...payload,
+            questions:
+              payload.questions && payload.questions.length > 0
+                ? deduplicateQuestions(payload.questions)
+                : prev.questions,
+            participants: payload.participants || prev.participants,
+            responses: payload.responses || prev.responses,
+          };
           break;
+        }
 
         case 'SET_STATUS':
           next = { ...prev, status: action.payload };
@@ -420,6 +431,33 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.warn('Firebase subscription error:', e);
     }
+
+    // Hydrate state from server immediately for mobile and LAN devices
+    fetch('/api/quiz/state')
+      .then((res) => res.json())
+      .then((serverState: QuizState) => {
+        if (serverState) {
+          setState((prev) => {
+            // If local storage on this device is empty of questions (e.g. fresh phone), adopt server state
+            if (prev.questions.length === 0 && serverState.questions && serverState.questions.length > 0) {
+              return {
+                ...prev,
+                ...serverState,
+              };
+            }
+            // If local storage has questions but server is empty, push to server
+            if (prev.questions.length > 0 && (!serverState.questions || serverState.questions.length === 0)) {
+              fetch('/api/quiz/state', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(prev),
+              }).catch(() => {});
+            }
+            return prev;
+          });
+        }
+      })
+      .catch(() => {});
 
     return () => {
       memoryListeners.delete(memoryListener);

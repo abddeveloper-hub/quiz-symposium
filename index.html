@@ -87,17 +87,23 @@
     }
   </style>
   <script>
-    window.location.replace("http://localhost:3000/");
+    const host = window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+      ? window.location.hostname
+      : '10.254.84.8';
+    window.location.replace("http://" + host + ":3000/");
   </script>
 </head>
 <body>
   <div class="card">
     <div class="badge">Luminous Emerald Academic</div>
     <h1>Academic Symposium Portal</h1>
-    <p>Opening the live examination and discourse portal at <strong>http://localhost:3000</strong>...</p>
+    <p>Opening the live examination and discourse portal at <strong>port 3000</strong>...</p>
     <div class="btn-group">
-      <a href="http://localhost:3000/" class="btn">Enter Participant Arena &rarr;</a>
+      <a id="enter-btn" href="http://10.254.84.8:3000/" class="btn">Enter Participant Arena &rarr;</a>
     </div>
+    <script>
+      document.getElementById('enter-btn').href = "http://" + host + ":3000/";
+    </script>
   </div>
 </body>
 </html>

@@ -73,6 +73,24 @@ export default function AdminPage() {
   // QR Modal State
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [networkUrl, setNetworkUrl] = useState<string>('http://10.254.84.8:3000');
+  const [detectedIp, setDetectedIp] = useState<string>('10.254.84.8');
+  const [customIp, setCustomIp] = useState<string>('10.254.84.8');
+
+  // Detect LAN / Wi-Fi IP address from server
+  React.useEffect(() => {
+    fetch('/api/network-ip')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.ip) {
+          setDetectedIp(data.ip);
+          setCustomIp(data.ip);
+          const port = data.port || 3000;
+          setNetworkUrl(`http://${data.ip}:${port}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1173,18 +1191,22 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-4 flex flex-col items-center">
-                <p className="text-xs text-[#49625d] leading-relaxed">
-                  Connect participants&apos; phones to the <strong>same Wi-Fi network</strong> and have them scan this QR code or visit the link below:
-                </p>
+                <div className="p-2.5 rounded-[0.25rem] bg-[#e2f8f2] border border-[#79f5db] text-left w-full text-xs space-y-1">
+                  <div className="text-[#006b57] font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#0ba689] animate-pulse" />
+                    Mobile Wi-Fi Connection
+                  </div>
+                  <p className="text-[#003328] text-[11px] leading-relaxed">
+                    Connect contestant phones to the <strong>same Wi-Fi or Mobile Hotspot</strong>, then scan the QR code below:
+                  </p>
+                </div>
 
                 {/* QR Code Image */}
                 <div className="p-3 bg-white rounded-lg shadow-md border-2 border-[#0ba689]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=4&data=${encodeURIComponent(
-                      typeof window !== 'undefined'
-                        ? `${window.location.protocol}//${window.location.hostname}:3000`
-                        : 'http://10.254.84.8:3000'
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data=${encodeURIComponent(
+                      networkUrl
                     )}`}
                     alt="Scan to join symposium quiz"
                     className="w-48 h-48 rounded-[0.25rem]"
@@ -1192,33 +1214,55 @@ export default function AdminPage() {
                 </div>
 
                 {/* Network URL Pill */}
-                <div className="w-full p-3 rounded-[0.25rem] bg-[#f6faf9] border border-[#dbe6e3] flex items-center justify-between gap-2 text-xs">
-                  <span className="text-[#006b57] font-semibold truncate font-serif">
-                    {typeof window !== 'undefined'
-                      ? `${window.location.protocol}//${window.location.hostname}:3000`
-                      : 'http://10.254.84.8:3000'}
-                  </span>
-                  <button
-                    onClick={() => {
-                      const url =
-                        typeof window !== 'undefined'
-                          ? `${window.location.protocol}//${window.location.hostname}:3000`
-                          : 'http://10.254.84.8:3000';
-                      navigator.clipboard.writeText(url);
-                      setCopiedLink(true);
-                      setTimeout(() => setCopiedLink(false), 2000);
-                    }}
-                    className="px-2.5 py-1 rounded-[0.25rem] bg-[#0ba689] hover:bg-[#088f75] text-white flex items-center gap-1 shrink-0 cursor-pointer font-semibold"
-                  >
-                    {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedLink ? 'Copied' : 'Copy'}</span>
-                  </button>
+                <div className="w-full space-y-2">
+                  <div className="w-full p-2.5 rounded-[0.25rem] bg-[#f6faf9] border border-[#dbe6e3] flex items-center justify-between gap-2 text-xs">
+                    <span className="text-[#006b57] font-semibold truncate font-mono text-sm select-all">
+                      {networkUrl}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(networkUrl);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="px-3 py-1.5 rounded-[0.25rem] bg-[#0ba689] hover:bg-[#088f75] text-white flex items-center gap-1 shrink-0 cursor-pointer font-semibold text-xs shadow-xs"
+                    >
+                      {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedLink ? 'Copied!' : 'Copy Link'}</span>
+                    </button>
+                  </div>
+
+                  {/* Manual IP Adjustment Option */}
+                  <div className="flex items-center gap-2 text-[11px] text-[#49625d]">
+                    <span className="shrink-0 font-medium">Host IP:</span>
+                    <input
+                      type="text"
+                      value={customIp}
+                      onChange={(e) => {
+                        const val = e.target.value.trim();
+                        setCustomIp(val);
+                        setNetworkUrl(`http://${val}:3000`);
+                      }}
+                      placeholder="e.g. 10.254.84.8"
+                      className="flex-1 px-2 py-1 rounded-[0.25rem] border border-[#dbe6e3] bg-white text-xs font-mono text-[#1e332f] focus:outline-none focus:border-[#0ba689]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomIp(detectedIp);
+                        setNetworkUrl(`http://${detectedIp}:3000`);
+                      }}
+                      className="text-[10px] text-[#006b57] underline hover:text-[#0ba689] shrink-0"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
 
                 <div className="text-[11px] text-[#49625d] text-left bg-[#f6faf9] p-3 rounded-[0.25rem] border border-[#dbe6e3] w-full space-y-1">
-                  <div className="text-[#006b57] font-bold">✓ Real-time Academic Sync Active</div>
-                  <div>• Submissions &amp; timer unlocks propagate instantly across devices.</div>
-                  <div>• Candidates enter Name, Shuhba, and Shuhba No. on their screens.</div>
+                  <div className="text-[#006b57] font-bold">✓ Zero-Latency Mobile Synchronized</div>
+                  <div>• Contestants open <strong>{networkUrl}</strong> on their phone browser.</div>
+                  <div>• Submissions &amp; questions update instantly in real-time across the room.</div>
                 </div>
               </div>
 

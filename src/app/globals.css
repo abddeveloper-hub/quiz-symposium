@@ -1,0 +1,350 @@
+@import "tailwindcss";
+
+:root {
+  --surface: #e8fef8;
+  --surface-dim: #c9dfd9;
+  --surface-bright: #e8fef8;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #e2f8f2;
+  --surface-container: #ddf3ec;
+  --surface-container-high: #d7ede7;
+  --surface-container-highest: #d1e7e1;
+  --on-surface: #0c1f1b;
+  --on-surface-variant: #3d4945;
+  --inverse-surface: #213430;
+  --inverse-on-surface: #e0f5ef;
+  --outline: #6d7a75;
+  --outline-variant: #bccac3;
+  --border-hairline: #dbe6e3;
+  --surface-tint: #006b57;
+  --primary: #006b57;
+  --on-primary: #ffffff;
+  --primary-container: #0ba689;
+  --on-primary-container: #003328;
+  --inverse-primary: #5ddbbb;
+  --secondary: #006b5c;
+  --on-secondary: #ffffff;
+  --secondary-container: #79f5db;
+  --on-secondary-container: #007060;
+  --tertiary: #5d5f5f;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #929393;
+  --on-tertiary-container: #2a2c2c;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+  --background: #e8fef8;
+  --on-background: #0c1f1b;
+  --surface-variant: #d1e7e1;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--on-surface);
+  --font-serif: var(--font-noto-serif), 'Noto Serif', Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-sans: var(--font-manrope), 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body {
+  background-color: #e8fef8;
+  color: #0c1f1b;
+  font-family: var(--font-manrope), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Academic Editorial Typography Utilities */
+.font-editorial-display {
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.font-editorial-headline {
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.font-scholarly-label {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Luminous Emerald Elevation & Shadow */
+.ambient-emerald-shadow {
+  box-shadow: 0 12px 36px -6px rgba(11, 166, 137, 0.08), 0 4px 12px -2px rgba(11, 166, 137, 0.04);
+}
+
+.ambient-emerald-hover:hover {
+  box-shadow: 0 16px 42px -6px rgba(11, 166, 137, 0.14), 0 6px 16px -2px rgba(11, 166, 137, 0.06);
+  transform: translateY(-2px);
+}
+
+.ambient-emerald-glow {
+  box-shadow: 0 0 25px rgba(11, 166, 137, 0.25), 0 4px 12px rgba(11, 166, 137, 0.12);
+}
+
+/* Architectural Hairline Framing */
+.hairline-frame {
+  border: 1px solid #dbe6e3;
+}
+
+.hairline-divider {
+  border-color: #dbe6e3;
+}
+
+/* Scholarly Citation & Abstract Callout */
+.scholarly-callout {
+  background-color: #f6faf9;
+  border-left: 3px solid #0ba689;
+  border-top: 1px solid #dbe6e3;
+  border-right: 1px solid #dbe6e3;
+  border-bottom: 1px solid #dbe6e3;
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-style: italic;
+  color: #1e332f;
+}
+
+/* Academic Card Container */
+.academic-card {
+  background-color: #ffffff;
+  border: 1px solid #dbe6e3;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px -4px rgba(11, 166, 137, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Buttons adhering strictly to design guidelines */
+.btn-emerald-primary {
+  background-color: #0ba689;
+  color: #ffffff;
+  border-radius: 0.25rem;
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(11, 166, 137, 0.2);
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-emerald-primary:hover:not(:disabled) {
+  background-color: #088f75;
+  box-shadow: 0 6px 20px rgba(11, 166, 137, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-emerald-secondary {
+  background-color: #ffffff;
+  border: 1.5px solid #0ba689;
+  color: #0ba689;
+  border-radius: 0.25rem;
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-emerald-secondary:hover:not(:disabled) {
+  background-color: #f6faf9;
+  border-color: #088f75;
+  color: #088f75;
+}
+
+.btn-emerald-ghost {
+  background-color: transparent;
+  color: #0ba689;
+  border-radius: 0.25rem;
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-emerald-ghost:hover:not(:disabled) {
+  background-color: #edf4f2;
+}
+
+/* Academic Badges & Chips */
+.academic-chip {
+  background-color: #edf4f2;
+  color: #0ba689;
+  border: 1px solid #dbe6e3;
+  border-radius: 0.25rem;
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+/* Light Architectural Grid Background */
+.bg-academic-grid {
+  background-color: #e8fef8;
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(11, 166, 137, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 166, 137, 0.04) 1px, transparent 1px);
+}
+
+/* Custom delicate scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #e8fef8;
+}
+::-webkit-scrollbar-thumb {
+  background: #bccac3;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0ba689;
+}
+
+/* Luminous Emerald Academic - Explicit Typography Scale Tokens */
+.font-display-lg {
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 44px;
+  letter-spacing: -0.01em;
+}
+@media (min-width: 768px) {
+  .font-display-lg {
+    font-size: 56px;
+    line-height: 64px;
+    letter-spacing: -0.02em;
+  }
+}
+
+.font-headline-lg {
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+}
+@media (min-width: 768px) {
+  .font-headline-lg {
+    font-size: 36px;
+    line-height: 44px;
+    letter-spacing: -0.015em;
+  }
+}
+
+.font-headline-md {
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 32px;
+}
+@media (min-width: 768px) {
+  .font-headline-md {
+    font-size: 28px;
+    line-height: 36px;
+  }
+}
+
+.font-headline-sm {
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+}
+@media (min-width: 768px) {
+  .font-headline-sm {
+    font-size: 22px;
+    line-height: 30px;
+  }
+}
+
+.font-title-lg {
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.font-title-md {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0.01em;
+}
+
+.font-body-lg {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+}
+
+.font-body-md {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.font-body-sm {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.font-label-md {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.font-label-sm {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Status Indicator Dot Component */
+.academic-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #ffffff;
+  border: 1px solid #dbe6e3;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(11, 166, 137, 0.04);
+}
+
+.academic-status-indicator .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: #0ba689;
+}
+
+/* Scholarly Citation Callout with 3px Emerald Accent */
+.scholarly-abstract-callout {
+  background-color: #f6faf9;
+  border-left: 3px solid #0ba689;
+  border-top: 1px solid #dbe6e3;
+  border-right: 1px solid #dbe6e3;
+  border-bottom: 1px solid #dbe6e3;
+  font-family: var(--font-noto-serif), Georgia, serif;
+  font-style: italic;
+  color: #1e332f;
+  padding: 1rem 1.25rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+

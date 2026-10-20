@@ -19,46 +19,34 @@ export const firebaseConfig = {
   measurementId: 'G-50NV45BYF3',
 };
 
-// Initialize Firebase safely for SSR/Client
-export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+// By default, Firebase Cloud sync is disabled while the shared Spark tier project daily limit is exceeded.
+// To enable Firebase, set NEXT_PUBLIC_ENABLE_FIREBASE=true in your environment.
+export const ENABLE_FIREBASE_CLOUD = process.env.NEXT_PUBLIC_ENABLE_FIREBASE === 'true';
 
-// Initialize Cloud Firestore
-export const db = getFirestore(app);
+// Lazily get Firestore instance only when enabled
+function getDb() {
+  if (!ENABLE_FIREBASE_CLOUD) return null;
+  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  return getFirestore(app);
+}
 
 const QUIZ_DOC_PATH = ['symposium_quiz', 'live_session'] as const;
-
-// Circuit breaker to protect browser console from infinite backoff retries when Spark tier daily limit is reached
-let isFirebaseQuotaExhausted = false;
-
-function handleFirestoreError(context: string, err: unknown): boolean {
-  const code = (err as { code?: string })?.code;
-  const message = (err as { message?: string })?.message || '';
-  if (code === 'resource-exhausted' || message.includes('Quota exceeded') || message.includes('resource-exhausted')) {
-    if (!isFirebaseQuotaExhausted) {
-      isFirebaseQuotaExhausted = true;
-      console.info(
-        'ℹ️ Firebase Cloud Firestore daily quota reached. Seamlessly continuing with high-speed local network & BroadcastChannel sync.'
-      );
-    }
-    return true;
-  }
-  console.warn(`Firebase ${context} notice:`, err);
-  return false;
-}
 
 /**
  * Broadcast full quiz state to Firebase Cloud Firestore
  */
 export async function pushQuizStateToFirebase(state: QuizState) {
-  if (isFirebaseQuotaExhausted) return;
+  if (!ENABLE_FIREBASE_CLOUD) return;
   try {
+    const db = getDb();
+    if (!db) return;
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     await setDoc(docRef, {
       ...state,
       lastUpdated: Date.now(),
     });
   } catch (err) {
-    handleFirestoreError('state sync', err);
+    console.warn('Firebase state sync notice:', err);
   }
 }
 
@@ -68,8 +56,10 @@ export async function pushQuizStateToFirebase(state: QuizState) {
 export function subscribeToFirebaseQuizState(
   onUpdate: (state: Partial<QuizState>) => void
 ): () => void {
-  if (isFirebaseQuotaExhausted) return () => {};
+  if (!ENABLE_FIREBASE_CLOUD) return () => {};
   try {
+    const db = getDb();
+    if (!db) return () => {};
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     const unsubscribe = onSnapshot(
       docRef,
@@ -82,17 +72,12 @@ export function subscribeToFirebaseQuizState(
         }
       },
       (error) => {
-        const isQuota = handleFirestoreError('onSnapshot', error);
-        if (isQuota) {
-          try {
-            unsubscribe();
-          } catch {}
-        }
+        console.warn('Firebase sync notice:', error?.message || error);
       }
     );
     return unsubscribe;
   } catch (err) {
-    handleFirestoreError('subscribe', err);
+    console.warn('Firebase subscribe notice:', err);
     return () => {};
   }
 }
@@ -101,8 +86,10 @@ export function subscribeToFirebaseQuizState(
  * Submit participant response directly to Firebase
  */
 export async function submitResponseToFirebase(response: ParticipantResponse) {
-  if (isFirebaseQuotaExhausted) return;
+  if (!ENABLE_FIREBASE_CLOUD) return;
   try {
+    const db = getDb();
+    if (!db) return;
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
@@ -119,7 +106,7 @@ export async function submitResponseToFirebase(response: ParticipantResponse) {
       }
     }
   } catch (err) {
-    handleFirestoreError('response submit', err);
+    console.warn('Firebase response submit notice:', err);
   }
 }
 
@@ -127,8 +114,10 @@ export async function submitResponseToFirebase(response: ParticipantResponse) {
  * Register participant in Firebase live session
  */
 export async function registerParticipantInFirebase(participant: Participant) {
-  if (isFirebaseQuotaExhausted) return;
+  if (!ENABLE_FIREBASE_CLOUD) return;
   try {
+    const db = getDb();
+    if (!db) return;
     const docRef = doc(db, ...QUIZ_DOC_PATH);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
@@ -148,6 +137,6 @@ export async function registerParticipantInFirebase(participant: Participant) {
       });
     }
   } catch (err) {
-    handleFirestoreError('register participant', err);
+    console.warn('Firebase register participant notice:', err);
   }
 }

@@ -222,7 +222,7 @@ export default function AdminPage() {
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-[0.25rem] bg-[#e2f8f2] border border-[#79f5db] text-[#006b57] font-semibold flex items-center gap-1 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#0ba689] animate-pulse" />
-                Firebase Cloud Sync
+                Real-Time LAN &amp; SSE Sync
               </span>
             </div>
             <p className="text-xs text-[#49625d] mt-0.5">

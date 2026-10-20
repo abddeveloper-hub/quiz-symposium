@@ -588,8 +588,18 @@ export default function ParticipantPage() {
                 )}
               </AnimatePresence>
 
-              {/* 4 Interactive Option Cards (A, B, C, D in Noto Serif) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Dynamic Interactive Option Cards (Any number of options: 1, 2, 3, 4, 5+ in Noto Serif) */}
+              <div
+                className={`grid gap-4 ${
+                  (currentQuestion?.options || []).length === 1
+                    ? 'grid-cols-1 max-w-xl mx-auto w-full'
+                    : (currentQuestion?.options || []).length === 3
+                    ? 'grid-cols-1 md:grid-cols-3'
+                    : (currentQuestion?.options || []).length >= 5
+                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                    : 'grid-cols-1 md:grid-cols-2'
+                }`}
+              >
                 {(currentQuestion?.options || []).map((opt) => {
                   const isSelected = selectedOptionId === opt.id;
                   const isCorrectOpt = opt.id === currentQuestion?.correctOptionId;

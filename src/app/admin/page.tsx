@@ -123,12 +123,30 @@ export default function AdminPage() {
         id: opt.id,
         text: opt.text.trim() || `Option ${opt.id}`,
       })),
-      correctOptionId: modalCorrectOption,
+      correctOptionId: modalCorrectOption || modalOptions[0]?.id || 'A',
     };
 
     updateQuestion(updatedQ);
     closeEditModal();
     showToast(`Question updated successfully and synced live!`);
+  };
+
+  const handleAddModalOption = () => {
+    const nextLetter = String.fromCharCode(65 + modalOptions.length);
+    setModalOptions((prev) => [...prev, { id: nextLetter, text: '' }]);
+  };
+
+  const handleRemoveModalOption = (index: number) => {
+    if (modalOptions.length <= 1) return;
+    const filtered = modalOptions.filter((_, i) => i !== index);
+    const reindexed = filtered.map((opt, i) => ({
+      ...opt,
+      id: String.fromCharCode(65 + i),
+    }));
+    setModalOptions(reindexed);
+    if (!reindexed.some((opt) => opt.id === modalCorrectOption)) {
+      setModalCorrectOption(reindexed[0]?.id || 'A');
+    }
   };
 
   // Form State in Manager Tab (for creating new or editing inline)
@@ -145,6 +163,24 @@ export default function AdminPage() {
     { id: 'D', text: '' },
   ]);
   const [formCorrectOption, setFormCorrectOption] = useState<OptionId>('A');
+
+  const handleAddFormOption = () => {
+    const nextLetter = String.fromCharCode(65 + formOptions.length);
+    setFormOptions((prev) => [...prev, { id: nextLetter, text: '' }]);
+  };
+
+  const handleRemoveFormOption = (index: number) => {
+    if (formOptions.length <= 1) return;
+    const filtered = formOptions.filter((_, i) => i !== index);
+    const reindexed = filtered.map((opt, i) => ({
+      ...opt,
+      id: String.fromCharCode(65 + i),
+    }));
+    setFormOptions(reindexed);
+    if (!reindexed.some((opt) => opt.id === formCorrectOption)) {
+      setFormCorrectOption(reindexed[0]?.id || 'A');
+    }
+  };
 
   const startEditManager = (q: Question) => {
     setEditingId(q.id);
@@ -189,7 +225,7 @@ export default function AdminPage() {
         id: opt.id,
         text: opt.text.trim() || `Option ${opt.id}`,
       })),
-      correctOptionId: formCorrectOption,
+      correctOptionId: formCorrectOption || formOptions[0]?.id || 'A',
     };
 
     if (editingId) {
@@ -868,16 +904,28 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* 4 Options with Correct Answer Toggle */}
+              {/* Dynamic Options with Add/Remove & Correct Answer Toggle */}
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[#49625d] mb-2 font-bold">
-                  Multiple Choice Options & Correct Key (Click letter button to set correct answer)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[11px] uppercase tracking-wider text-[#49625d] font-bold">
+                    Examination Options ({formOptions.length}) • Click letter to set correct answer
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddFormOption}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-[0.25rem] bg-[#e2f8f2] hover:bg-[#ddf3ec] border border-[#79f5db] text-[#006b57] text-[11px] font-bold cursor-pointer transition-all shadow-xs"
+                    title="Add another option to this question"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Option</span>
+                  </button>
+                </div>
+
                 <div className="space-y-2.5">
                   {formOptions.map((opt, i) => (
                     <div
-                      key={opt.id}
-                      className={`flex items-center gap-3 p-2.5 rounded-[0.25rem] border ${
+                      key={`form-opt-${opt.id}-${i}`}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-[0.25rem] border transition-all ${
                         formCorrectOption === opt.id
                           ? 'bg-[#e2f8f2] border-[#0ba689]'
                           : 'bg-white border-[#dbe6e3]'
@@ -911,8 +959,19 @@ export default function AdminPage() {
 
                       {formCorrectOption === opt.id && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-[0.25rem] bg-[#006b57] text-white shrink-0">
-                          CORRECT ANSWER
+                          CORRECT
                         </span>
+                      )}
+
+                      {formOptions.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFormOption(i)}
+                          className="p-1.5 rounded-[0.25rem] text-[#ba1a1a] hover:bg-[#ffdad6] transition-all cursor-pointer shrink-0"
+                          title={`Remove Option ${opt.id}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </div>
                   ))}
@@ -1007,6 +1066,10 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2 pt-1 text-[10px] text-[#49625d]">
                       <span className="text-[#006b57] font-bold">
                         Ans: Option {q.correctOptionId}
+                      </span>
+                      <span>•</span>
+                      <span className="bg-[#edf4f2] text-[#006b57] px-1.5 py-0.5 rounded-[0.2rem] font-semibold">
+                        {q.options?.length || 0} {q.options?.length === 1 ? 'option' : 'options'}
                       </span>
                       <span>•</span>
                       <span>{q.timerSeconds}s</span>
@@ -1110,16 +1173,28 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 4 Options & Correct Answer Radio */}
+                {/* Dynamic Options with Add/Remove & Correct Answer Toggle */}
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#49625d] mb-2 font-bold">
-                    Options & Correct Key (Click letter to toggle correct answer)
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[11px] uppercase tracking-wider text-[#49625d] font-bold">
+                      Options ({modalOptions.length}) • Click letter to set correct answer
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddModalOption}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-[0.25rem] bg-[#e2f8f2] hover:bg-[#ddf3ec] border border-[#79f5db] text-[#006b57] text-[11px] font-bold cursor-pointer transition-all shadow-xs"
+                      title="Add another option to this question"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Option</span>
+                    </button>
+                  </div>
+
                   <div className="space-y-2">
                     {modalOptions.map((opt, i) => (
                       <div
-                        key={opt.id}
-                        className={`flex items-center gap-3 p-2.5 rounded-[0.25rem] border ${
+                        key={`modal-opt-${opt.id}-${i}`}
+                        className={`flex items-center gap-2.5 p-2.5 rounded-[0.25rem] border transition-all ${
                           modalCorrectOption === opt.id
                             ? 'bg-[#e2f8f2] border-[#0ba689]'
                             : 'bg-white border-[#dbe6e3]'
@@ -1155,6 +1230,17 @@ export default function AdminPage() {
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-[0.25rem] bg-[#006b57] text-white shrink-0">
                             CORRECT
                           </span>
+                        )}
+
+                        {modalOptions.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveModalOption(i)}
+                            className="p-1.5 rounded-[0.25rem] text-[#ba1a1a] hover:bg-[#ffdad6] transition-all cursor-pointer shrink-0"
+                            title={`Remove Option ${opt.id}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
                     ))}

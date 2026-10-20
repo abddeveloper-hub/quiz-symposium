@@ -1,6 +1,6 @@
 export type QuizStatus = 'WAITING' | 'LIVE' | 'LOCKED' | 'REVEALED';
 
-export type OptionId = 'A' | 'B' | 'C' | 'D';
+export type OptionId = string;
 
 export interface Option {
   id: OptionId;
